@@ -6,17 +6,36 @@ metadata:
     app: myapp
     type: frontend
 spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+      type: frontend
   template:
     metadata:
-      name: myapp-pod
       labels:
         app: myapp
         type: frontend
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-name
+                    operator: In
+                    values:
+                      - arm-worker
+                      - arm-worker2
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - myapp
+              topologyKey: node-name
       containers:
         - name: pyapp-container
           image: furkan2121/flask-sqlite-app:latest
-  replicas: 2
-  selector:
-    matchLabels:
-      type: frontend
