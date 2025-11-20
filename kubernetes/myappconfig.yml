@@ -1,0 +1,6 @@
+apiVersion: furkan.com/v1alpha1
+kind: MyAppConfig
+metadata:
+  name: greeting-config
+spec:
+  greetingMessage: "Greeting config çalışıyor."
