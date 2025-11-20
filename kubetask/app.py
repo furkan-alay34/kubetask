@@ -1,20 +1,26 @@
-from flask import Flask, jsonify, request
+from flask import Flask, Response, request
 import sqlite3
 import random
+from prometheus_client import Gauge, Counter, generate_latest
 
 app = Flask(__name__)
-counter = 0
+
+# --- Prometheus metric'leri ---
+random_number_metric = Gauge("random_number", "Random number between 1-100")
+counter_metric = Counter("counter_total", "Total number of /metrics calls")
 
 # --- /metrics endpoint ---
 @app.route("/metrics")
 def metrics():
-    global counter
-    counter += 1
-    data = {
-        "random_number": random.randint(1, 100),
-        "counter": counter
-    }
-    return jsonify(data)
+    counter_metric.inc()
+    random_number_metric.set(random.randint(1, 100))
+
+    output = generate_latest()
+
+    return Response(
+        output,
+        mimetype="text/plain; version=0.0.4; charset=utf-8"
+    )
 
 # --- / endpoint ---
 @app.route("/")
@@ -46,7 +52,7 @@ def home():
 # --- /add endpoint ---
 @app.route("/add")
 def add_record():
-    msg = request.args.get("msg")  # URL'deki ?msg= parametresini alır
+    msg = request.args.get("msg")
     if not msg:
         return "Please provide a message, e.g. /add?msg=Hello"
 
@@ -60,4 +66,4 @@ def add_record():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
