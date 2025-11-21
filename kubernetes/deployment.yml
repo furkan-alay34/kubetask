@@ -6,7 +6,7 @@ metadata:
     app: myapp
     type: frontend
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: myapp
@@ -19,9 +19,10 @@ spec:
     spec:
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
                   - key: node-name
                     operator: In
                     values:
