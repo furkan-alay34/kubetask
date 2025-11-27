@@ -42,3 +42,10 @@ spec:
           image: furkan2121/flask-sqlite-app:latest
           ports:
             - containerPort: 5000
+          volumeMounts:
+            - name: demoapp-storage
+              mountPath: /data
+      volumes:
+        - name: demoapp-storage
+          persistentVolumeClaim:
+            claimName: demoapp-pvc

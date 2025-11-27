@@ -25,7 +25,7 @@ def metrics():
 # --- / endpoint ---
 @app.route("/")
 def home():
-    conn = sqlite3.connect("demo.db")
+    conn = sqlite3.connect("/data/demo.db")
     cursor = conn.cursor()
 
     cursor.execute("""
