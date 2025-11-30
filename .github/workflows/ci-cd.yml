@@ -1,47 +1,56 @@
 name: Build & Deploy Pipeline
 
+permissions:
+  contents: write
+
 on:
   push:
     paths:
       - "kubetask/**"
 
 jobs:
-  build_and_push:
+  build_and_deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        persist-credentials: true
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Login to Docker Hub
+    - name: Login to DockerHub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Get short Git commit SHA
-      id: vars
-      run: echo "TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+    - name: Generate random image tag
+      id: generate-tag
+      run: echo "TAG=$(date +%s)" >> $GITHUB_ENV
 
-    - name: Build and Push Docker image
+    - name: Build and push Docker image
       run: |
-        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/myapp:${TAG} ./kubetask
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/myapp:${TAG}
+        docker build -t furkan2121/flask-sqlite-app:${TAG} ./kubetask
+        docker push furkan2121/flask-sqlite-app:${TAG}
 
     - name: Update Kubernetes manifest
       run: |
-        sed -i "s|image: .*$|image: ${{ secrets.DOCKERHUB_USERNAME }}/argo-app:${TAG}|" kubernetes/deployment.yml
+        sed -i "s|image: .*|image: furkan2121/flask-sqlite-app:${TAG}|" kubernetes/deployment.yml
 
-    - name: Setup Git
+    - name: Setup git identity
       run: |
         git config --global user.email "${{ secrets.GIT_EMAIL }}"
         git config --global user.name "${{ secrets.GIT_USER }}"
 
-    - name: Commit and push manifest changes
+    - name: Ensure remote uses token (so push works)
+      run: |
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
+    - name: Commit & push changes
       run: |
         git add kubernetes/deployment.yml
-        git commit -m "Update image tag to ${TAG}"
-        git push origin main
+        git commit -m "Update image tag to ${TAG}" || echo "No changes to commit"
